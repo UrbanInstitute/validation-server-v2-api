@@ -1,0 +1,65 @@
+version: '3.9'
+
+services:
+  webapp:
+    container_name: webapp
+    build:
+      context: ./sdt-validation-server-frontend
+      dockerfile: dockerfile.staging
+    ports:
+      - 8000:8080
+    volumes:
+      - ./src/components:/webapp/src/components:cached
+      - ./src/hooks:/webapp/src/hooks:cached
+      - ./src/lib:/webapp/src/lib:cached
+      - ./src/models:/webapp/src/models:cached
+      - ./src/providers:/webapp/src/providers:cached
+      - ./src/routes:/webapp/src/routes:cached
+      - ./src/services:/webapp/src/services:cached
+      - ./src/stories:/webapp/src/stories:cached
+  app:
+    container_name: app
+    build:
+      context: .
+    ports: 
+      - 9000:9000
+    volumes:
+      #- ./:/code
+      - static-data:/vol/web
+      #- ./scripts/:/scripts
+    env_file:
+      - .env
+    restart: always
+
+
+  proxy:
+    container_name: nginx
+    build:
+      context: ./nginx
+    restart: always
+    depends_on:
+      - app
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - static-data:/vol/static
+      - nginx-dhparams:/vol/nginx
+    env_file:
+      - .env
+
+  db:
+    container_name: db_core_server
+    image: mysql:8
+    volumes:
+      - ./scripts/:/scripts
+      - mysql-data:/var/lib/mysql
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    env_file:
+      - .env
+
+volumes:
+  static-data:
+  nginx-dhparams:
+  mysql-data:
